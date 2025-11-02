@@ -43,7 +43,7 @@ El proyecto sigue un enfoque basado en **Domain-Driven Design (DDD)**:
 ## 🚀 Instalación y configuración
 1. Clonar el repositorio:
 ```bash
-git clone https://github.com/usuario/complaint-system.git
+git clone https://github.com/bag0699/complaint-system.git
 ```
 2. Clonar el repositorio:
 ```sql
