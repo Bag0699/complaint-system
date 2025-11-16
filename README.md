@@ -24,7 +24,7 @@ El proyecto sigue un enfoque basado en **Domain-Driven Design (DDD)**:
 - **Interface Layer:** Controladores REST
 
 ## 🛠️ Tecnologías utilizadas
-- **Java 17**
+- **Java 21**
 - **Spring Boot 3**
 - **Maven**
 - **JPA / Hibernate**
