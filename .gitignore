@@ -70,3 +70,7 @@ build/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# Archivos subidos por usuarios que NO deben estar en el repositorio
+/uploads/
+/uploads/evidence/

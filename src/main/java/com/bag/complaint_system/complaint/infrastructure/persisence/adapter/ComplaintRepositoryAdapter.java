@@ -182,13 +182,14 @@ public class ComplaintRepositoryAdapter implements ComplaintRepository {
                 evidenceEntity.getFileType(),
                 evidenceEntity.getFileSize()
         );
-        evidenceEntity.setId(evidence.getId());
-        evidenceEntity.setUploadedAt(evidence.getUploadedAt());
+        evidence.setId(evidenceEntity.getId());
+        evidence.setUploadedAt(evidenceEntity.getUploadedAt());
         return evidence;
     }
 
     private EvidenceEntity toEvidenceEntity(Evidence evidence) {
         EvidenceEntity evidenceEntity = new EvidenceEntity();
+
         evidenceEntity.setId(evidence.getId());
         evidenceEntity.setFileName(evidence.getFileName());
         evidenceEntity.setFilePath(evidence.getFilePath());
