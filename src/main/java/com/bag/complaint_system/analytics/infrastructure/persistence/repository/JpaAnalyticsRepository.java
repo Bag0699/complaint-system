@@ -58,10 +58,12 @@ public interface JpaAnalyticsRepository extends JpaRepository<ComplaintEntity, L
       @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
   @Query(
-      """
-        SELECT AVG(DATEDIFF(c.updatedAt, c.createdAt))
-        FROM ComplaintEntity c
-        WHERE c.status = 'CLOSED'
-        """)
+      value =
+          """
+      SELECT AVG(EXTRACT(DAY FROM (c.updated_at - c.created_at)))
+      FROM complaints c
+      WHERE c.status = 'CLOSED'
+      """,
+      nativeQuery = true)
   Double getAverageResolutionTime();
 }
