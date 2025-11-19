@@ -2,30 +2,38 @@ package com.bag.complaint_system.complaint.infrastructure.storage;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Service
 @Slf4j
 public class FileStorageService {
+    private final RestClient restClient;
+    private final String bucketName;
+    private final String supabaseStorageUrl;
 
-    private final Path fileStorageLocation;
+    public FileStorageService(
+            @Value("${supabase.url}") String supabaseUrl,
+            @Value("${supabase.key}") String supabaseKey,
+            @Value("${supabase.bucket}") String bucketName,
+            RestClient.Builder restClientBuilder // Inyecta el Builder
+    ) {
+        this.bucketName = bucketName;
+        // Construimos la URL base para la API de Storage
+        this.supabaseStorageUrl = supabaseUrl + "/storage/v1/object";
 
-    public FileStorageService(@Value("${file.upload-dir:./uploads/evidences}") String uploadDir) {
-        this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
-
-        try {
-            Files.createDirectories(this.fileStorageLocation);
-        } catch (IOException ex) {
-            throw new RuntimeException("Could not create upload directory", ex);
-        }
+        // Creamos un cliente RestClient pre-configurado
+        this.restClient = restClientBuilder
+                .baseUrl(this.supabaseStorageUrl)
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + supabaseKey)
+                .build();
     }
 
     public String storeFile(MultipartFile file, Long complaintId) {
@@ -33,38 +41,67 @@ public class FileStorageService {
         validateFile(file);
 
         try {
-            // Generate unique filename
+            // 2. Generar nombre de archivo
             String originalFilename = file.getOriginalFilename();
             String fileExtension = getFileExtension(originalFilename);
             String newFilename = complaintId + "_" + UUID.randomUUID() + fileExtension;
+            String remotePath = complaintId + "/" + newFilename;
 
-            // Create a complaint directory if not exists
-            Path complaintDir = this.fileStorageLocation.resolve(complaintId.toString());
-            Files.createDirectories(complaintDir);
+            // 3. Subir el archivo a Supabase Storage
+            log.info("Uploading file to Supabase Storage at path: {}", remotePath);
 
-            // Copy file to target location
-            Path targetLocation = complaintDir.resolve(newFilename);
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            restClient.post()
+                    .uri("/{bucket}/{path}", this.bucketName, remotePath)
+                    .contentType(MediaType.parseMediaType(file.getContentType()))
+                    .body(file.getResource()) // Envía el recurso del archivo
+                    .retrieve() // Ejecuta la solicitud
+                    .onStatus(status -> status.isError(), (request, response) -> {
+                        String errorBody = response.getStatusText(); // Valor por defecto
+                        try {
+                            // Usamos getBody() y manejamos IOException
+                            if (response.getBody() != null) {
+                                errorBody = new String(response.getBody().readAllBytes());
+                            }
+                        } catch (IOException e) {
+                            log.warn("Could not read error body from Supabase response", e);
+                        }
+                        throw new RuntimeException("Supabase storage error: " + errorBody);
+                    })
+                    .toBodilessEntity();
 
-            log.info("File stored successfully: {}", targetLocation);
+            log.info("File stored successfully in Supabase: {}", remotePath);
 
-            // Return relative path
-            return complaintId + "/" + newFilename;
+            // 4. Devolver la ruta relativa
+            return remotePath;
 
-        } catch (IOException ex) {
-            throw new RuntimeException("Could not store file", ex);
+        } catch (Exception ex) {
+            log.error("Could not store file", ex);
+            throw new RuntimeException("Could not store file: " + ex.getMessage(), ex);
         }
     }
 
-    public Path loadFile(String filePath) {
+    public Resource loadFile(String filePath) {
         try {
-            Path file = this.fileStorageLocation.resolve(filePath).normalize();
-            if (Files.exists(file)) {
-                return file;
-            } else {
-                throw new RuntimeException("File not found: " + filePath);
+            log.info("Downloading file from Supabase: {}", filePath);
+
+            // Llama a la API de Supabase para descargar el objeto
+            byte[] fileBytes = restClient.get()
+                    .uri("/{bucket}/{path}", this.bucketName, filePath)
+                    .retrieve()
+                    // Manejo de error si no se encuentra
+                    .onStatus(status -> status.equals(HttpStatus.NOT_FOUND), (request, response) -> {
+                        throw new RuntimeException("File not found in Supabase: " + filePath);
+                    })
+                    .body(byte[].class); // Descarga los bytes del archivo
+
+            if (fileBytes == null) {
+                throw new RuntimeException("File not found (empty response): " + filePath);
             }
+
+            return new ByteArrayResource(fileBytes);
+
         } catch (Exception ex) {
+            log.error("File not found: {}", filePath, ex);
             throw new RuntimeException("File not found: " + filePath, ex);
         }
     }

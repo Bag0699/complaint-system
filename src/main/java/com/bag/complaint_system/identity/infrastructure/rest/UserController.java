@@ -4,14 +4,19 @@ import com.bag.complaint_system.identity.application.dto.request.RegisterUserReq
 import com.bag.complaint_system.identity.application.dto.request.UpdateProfileRequest;
 import com.bag.complaint_system.identity.application.dto.response.AuthResponse;
 import com.bag.complaint_system.identity.application.dto.response.UserProfileResponse;
+import com.bag.complaint_system.identity.application.dto.response.UserResponse;
 import com.bag.complaint_system.identity.application.useCase.CreateAdminUseCase;
+import com.bag.complaint_system.identity.application.useCase.GetAllUsersCase;
 import com.bag.complaint_system.identity.application.useCase.GetProfileUseCase;
 import com.bag.complaint_system.identity.application.useCase.UpdateProfileUseCase;
+import com.bag.complaint_system.shared.infrastructure.security.SecurityContextHelper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,6 +26,8 @@ public class UserController {
     private final CreateAdminUseCase createAdminUseCase;
     private final UpdateProfileUseCase updateProfileUseCase;
     private final GetProfileUseCase getProfileUseCase;
+    private final GetAllUsersCase getAllUsersCase;
+    private final SecurityContextHelper securityContextHelper;
 
     @GetMapping("/profile")
     public ResponseEntity<UserProfileResponse> getProfile() {
@@ -46,4 +53,9 @@ public class UserController {
                 .body(response);
     }
 
+    @GetMapping
+    public List<UserResponse> getAllUsers() {
+        Long authenticatedUserId = securityContextHelper.getAuthenticatedUserId();
+        return getAllUsersCase.execute(authenticatedUserId);
+    }
 }
