@@ -72,6 +72,13 @@ public class UserRepositoryAdapter implements UserRepository {
         jpaUserRepository.deleteById(id);
     }
 
+    @Override
+    public List<User> findAll() {
+        return jpaUserRepository.findAll().stream()
+                .map(this::toUser)
+                .collect(Collectors.toList());
+    }
+
     private UserEntity toEntity(User user) {
         UserEntity entity = new UserEntity();
         entity.setId(user.getId());

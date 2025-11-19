@@ -2,6 +2,7 @@ package com.bag.complaint_system.identity.application.mapper;
 
 import com.bag.complaint_system.identity.application.dto.response.AuthResponse;
 import com.bag.complaint_system.identity.application.dto.response.UserProfileResponse;
+import com.bag.complaint_system.identity.application.dto.response.UserResponse;
 import com.bag.complaint_system.identity.domain.model.aggregate.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -19,6 +20,10 @@ public interface UserMapper {
     @Mapping(target = "type", constant = "Bearer")
     @Mapping(target = "email", source = "user", qualifiedByName = "getEmailValue")
     AuthResponse toAuthResponse(User user, String token);
+
+    @Mapping(target = "email", source = "user", qualifiedByName = "getEmailValue")
+    @Mapping(target = "phone", source = "user", qualifiedByName = "getPhoneValue")
+    UserResponse toUserResponse(User user);
 
     @Named("getFullName")
     default String getFullName(User user) {
