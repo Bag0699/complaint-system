@@ -13,6 +13,7 @@ public class CorsConfig implements WebMvcConfigurer {
         .addMapping("/api/**")
         .allowedOrigins(
             "https://complaint-system-fronted.vercel.app",
+            "https://complaint-system-eight.vercel.app",
             "http://localhost:3000",
             "http://localhost:4200")
         .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH")
