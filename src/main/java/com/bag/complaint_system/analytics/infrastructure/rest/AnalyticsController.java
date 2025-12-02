@@ -3,6 +3,7 @@ package com.bag.complaint_system.analytics.infrastructure.rest;
 import com.bag.complaint_system.analytics.application.dto.response.ComplaintByDateRangeResponse;
 import com.bag.complaint_system.analytics.application.dto.response.ComplaintByStatusResponse;
 import com.bag.complaint_system.analytics.application.dto.response.ComplaintByTypeResponse;
+import com.bag.complaint_system.analytics.application.useCase.GetAverageResolutionTimeUseCase;
 import com.bag.complaint_system.analytics.application.useCase.GetComplaintsByDateUseCase;
 import com.bag.complaint_system.analytics.application.useCase.GetComplaintsByStatusUseCase;
 import com.bag.complaint_system.analytics.application.useCase.GetComplaintsByTypeUseCase;
@@ -25,6 +26,7 @@ public class AnalyticsController {
   private final GetComplaintsByDateUseCase getComplaintsByDateUseCase;
   private final GetComplaintsByStatusUseCase getComplaintsByStatusUseCase;
   private final GetComplaintsByTypeUseCase getComplaintsByTypeUseCase;
+  private final GetAverageResolutionTimeUseCase getAverageResolutionTimeUseCase;
   private final SecurityContextHelper securityContextHelper;
 
   @GetMapping("/complaints-by-date")
@@ -46,5 +48,11 @@ public class AnalyticsController {
   public ComplaintByStatusResponse getComplaintsByStatus() {
     Long authId = securityContextHelper.getAuthenticatedUserId();
     return getComplaintsByStatusUseCase.execute(authId);
+  }
+
+  @GetMapping("/average-resolution-time")
+  public Double getAverageResolutionTime() {
+    Long authId = securityContextHelper.getAuthenticatedUserId();
+    return getAverageResolutionTimeUseCase.execute(authId);
   }
 }
